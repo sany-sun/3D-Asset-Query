@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="./js/three.js-master/build/three.js"></script>
+    <script src="./js/three.js-master/examples/js/controls/TrackballControls.js"></script>
+    <script src="./js/three.js-master/examples/js/controls/OrbitControls.js"></script>
+    <script src="./js/three.js-master/examples/js/controls/FirstPersonControls.js"></script>
+    <script src="./js/three.js-master/examples/js/loaders/OBJLoader.js"></script>
+    <script src="./js/three.js-master/examples/js/loaders/FBXLoader.js"></script>
+    <script src="./js/three.js-master/examples/js/loaders/MTLLoader.js"></script>
+    <script src="./js/three.js-master/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="./js/three.js-master/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="./js/three.js-master/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="./js/three.js-master/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="./js/three.js-master/examples/js/postprocessing/OutlinePass.js"></script>
+    <script src="./js/three.js-master/examples/js/shaders/CopyShader.js"></script>
+    <script src="./js/three.js-master/examples/js/libs/dat.gui.min.js"></script>
+    <script src="./js/three.js-master/examples/js/libs/stats.min.js"></script>
+    <script src="./js/three.js-master/examples/js/libs/inflate.min.js"></script>
+    <script src="./js/three.js-master/examples/js/postprocessing/EffectComposer.js"></script>
+    <title>Document</title>
+    <style>
+        div{
+            width:10px;
+            height:10px;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        init();
+        function init(){
+            var selectedObjects = [];
+            var clock = new THREE.Clock();
+            var scene = new THREE.Scene();
+            const box = document.querySelector("#box")
+            var camera = new THREE.PerspectiveCamera(
+                45,window.innerWidth/window.innerHeight,0.1,1000
+            );
+            var renderPass=new THREE.RenderPass(scene,camera);
+            
+            var renderer = new THREE.WebGLRenderer({box,
+                antialias:true,
+                alpha:true
+                });
+            var composer=new THREE.EffectComposer(renderer);
+            composer.addPass(renderPass);
+            
+            var clearColor = new THREE.Color(0xEEEEEE);
+            renderer.setClearColor(clearColor);
+            renderer.setSize(window.innerWidth,window.innerHeight);
+
+            var plane_bottom =new THREE.PlaneGeometry(60,40);//底面材质
+            //材质
+            var planeMaterial = new THREE.MeshLambertMaterial(
+                {side: THREE.DoubleSide,
+                color:0xEEEEEE});
+            var plane1 = new THREE.Mesh(plane_bottom,planeMaterial);
+            plane1.rotation.x = -.5*Math.PI;
+            plane1.position.x=0;
+            plane1.position.y=0;
+            plane1.position.z=0;
+            // scene.add(plane1);
+            // var fbxloder = new THREE.FBXLoader();
+            // fbxloder.load( './assert/mesh/机场线/T2.fbx', function ( object ) 
+	        //     {//加载路径fbx文件
+            //         object.rotation.x = -2.5*Math.PI;
+	        //         object.traverse( function (child) 
+	        //     {
+			//     if ( child.isMesh )
+			//     {
+            //         child.castShadow = true;
+            //         child.receiveShadow = true;
+			//     }
+            //         } );
+            //         scene.add( object );//模型
+
+            //         } );   
+
+
+
+            const gltfLoader = new THREE.GLTFLoader();
+            gltfLoader.load(
+            "./assert/mesh/机场线/t2/t2.gltf",
+            function (gltf) {
+                console.log(gltf)
+                gltf.scene.receiveShadow = true;
+                gltf.scene.castShadow = true;
+                console.log(gltf);
+                gltf.scene.scale.set(1,1,1)
+                const levelMesh = gltf.scene.getObjectByName("c");
+                const levelMat = new THREE.MeshStandardMaterial({
+                // color: Color.GROUND,
+                // flatShading: true,
+                // roughness: 1,
+                // metalness: 0,
+                });
+                gltf.scene.receiveShadow = true;
+                gltf.scene.castShadow = true;
+                gltf.scene.traverse(function (node) {
+                if (node instanceof THREE.Mesh) {
+                    {
+                    node.castShadow = true;
+                    node.material.emissive = node.material.color;
+                    node.material.emissiveMap = node.material.map;
+                    }
+                }
+                });
+                scene.add(gltf.scene);
+            },
+            null
+            );
+
+
+            camera.position.x = 0;
+            camera.position.y =100;
+            camera.position.z=0;
+            camera.lookAt(scene.position);//相机坐标和照相位置
+            document.body.appendChild( renderer.domElement );
+
+            //帧率
+            var stats = new Stats();
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.top = '0px'; //显示在屏幕左上角的地方。
+            document.body.appendChild( stats.domElement );//添加到container之后
+
+            var light = new THREE.DirectionalLight( 0xffffff ); // soft white light
+            // THREE.Light.castShadow = true;
+            // //如果是调试状态，还可以把灯光的调试帮助框显示出来
+            // THREE.Light.shadowCameraVisible = true;
+            // //设置阴影贴图质量
+            // THREE.Light.shadowMapWidth = THREE.Light.shadowMapHeight = 1024 * 4;
+            // //设置模型属性
+            // //设置物体生成阴影
+            // THREE.Mesh.castShadow = true;
+            // //设置物体接收阴影，即其它物体的阴影可以显示在该物体上
+            // THREE.Mesh.receiveShadow = true;
+            light.castShadow = true;
+            light.shadow.camera.near = 0.1; //产生阴影的最近距离
+            light.shadow.camera.far = 10; //产生阴影的最远距离
+            light.shadow.camera.left = -2; //产生阴影距离位置的最左边位置
+            light.shadow.camera.right = 2; //最右边
+            light.shadow.camera.top = 2; //最上边
+            light.shadow.camera.bottom = -2; //最下面
+            scene.add( light );
+            // var spotLight = new THREE.SpotLight(0xffffff);
+            // var spotLight_1 = new THREE.SpotLight(0xffffff);
+            // spotLight.position.set(0,60,0);
+            // spotLight.castShadow = true;
+            // scene.add(spotLight);
+
+            var path = '/assert/skybox/bak26/';
+            var format = '.jpg';
+            var urls = [
+            path + 'px' + format, path + 'nx' + format,
+            path + 'py' + format, path + 'ny' + format,
+            path + 'pz' + format, path + 'nz' + format
+                        ]
+            var materials = [];
+            for (var i = 0; i < urls.length; ++i) {
+            var loader = new this.THREE.TextureLoader();
+            // loader.setCrossOrigin( this.crossOrigin );
+            var texture = loader.load(urls[i], function () {}, undefined, function () {})
+            materials.push(new this.THREE.MeshBasicMaterial({
+                map: texture,
+                side: this.THREE.BackSide
+                // transparent: true,
+                // needsUpdate:true
+            })
+            )
+            };
+            var cube = new this.THREE.Mesh(new this.THREE.CubeGeometry(900, 900, 900), materials);
+            cube.name = 'sky';
+            scene.add(cube);
+            var axes = new this.THREE.AxesHelper(100);
+            scene.add(axes);
+            //天空盒
+            
+
+            // var trackballControls = new THREE.TrackballControls(camera);
+            // trackballControls.rotateSpeed=5.0;
+            // trackballControls.zoomSpeed=3.0;
+            // trackballControls.panSpeed=1.0;
+            // trackballControls.staticMoving=true;//轨迹球控件定义属性
+            var orbitcontrol = new THREE.OrbitControls(camera, renderer.domElement);
+            var raycaster = new THREE.Raycaster()
+            var mouse = new THREE.Vector2()
+            // function onMouseClick(event){
+            // //将鼠标点击位置的屏幕坐标转换成threejs中的标准坐标
+            // mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+            // mouse.y = (event.clientY/window.innerHeight) *2 + 1
+            // // 通过鼠标点的位置和当前相机的矩阵计算出raycaster
+            // raycaster.setFromCamera( mouse, camera );
+            // // 获取raycaster直线和所有模型相交的数组集合
+            // var scensObjs = [];
+            // scene.children.forEach(child=>{
+            //     for(var i =0;i<child.children.length;i++){
+            //         var obj = child.children[i];
+            //         scensObjs.push(obj);
+            //     }
+            // });
+            // objs = scensObjs.sort(function (a, b) {
+            //         return a.userData.distance - b.userData.distance;
+            //     });
+            // var intersects = raycaster.intersectObjects(objs,true);
+            
+            // console.log(intersects);
+            // //将所有的相交的模型的颜色设置为红色
+            // if(intersects.length>0){
+            //     for ( var i = 0; i < intersects.length; i++ ) {
+            //         intersects[i].object.material.color.set(0xff0000);
+            //     }
+            // }
+            // }
+            function click(event){
+            var raycaster = new THREE.Raycaster();
+            var mouse = new THREE.Vector2();
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            //找到场景中所有外部模型
+                var scensObjs = [];
+                scene.children.forEach(child => {
+                for (var i = 0; i < child.children.length; i++) {
+                var obj=child.children[i];
+                scensObjs.push(obj);
+                }
+                });
+                //返回选中的外部模型对象
+                var intersects = raycaster.intersectObjects(scensObjs);
+                var objs = [];
+                for (var i = 0; i < intersects.length; i++) {
+                    var intersect = intersects[i];
+                    if (intersect.object instanceof THREE.Mesh) {
+                        var obj = intersect.object.parent;
+                        //把距离加到模型用户数据里面，方便后面排序
+                        obj.userData.distance = intersect.distance;
+                        objs.push(obj);
+                    }
+                }
+            objs = objs.sort(function (a, b) {
+                return a.userData.distance - b.userData.distance;
+            });
+
+            
+            const outlinePass = new THREE.OutlinePass(new THREE.Vector2(window.innerWidth,window.innerHeight), scene, camera);
+            outlinePass.renderToScreen = true;
+            outlinePass.edgeStrength = 3 //粗
+            outlinePass.edgeGlow = 2 //发光
+            outlinePass.edgeThickness = 2 //光晕粗
+            outlinePass.pulsePeriod = 1 //闪烁
+            outlinePass.usePatternTexture = false //是否使用贴图
+            outlinePass.visibleEdgeColor.set('yellow'); // 设置显示的颜色
+            outlinePass.hiddenEdgeColor.set(0xff00ff);
+            composer.addPass(outlinePass);
+            function addSelectedObject( object ) {
+                selectedObjects = [];
+                selectedObjects.push( object );
+            }
+            if(intersects.length>0){
+                    var borderMesh = intersects[0].object;
+                    var bordermaterial = borderMesh.material.clone();
+                    // borderMesh1.material.name='hh';
+                    // console.log(borderMesh1.uuid);
+                    // for(i=0;i<intersects.length;i++){
+                        // console.log(intersects[0].object.name)
+                        // console.log(borderMesh1.name)
+                    //     if(intersects[i].object.name==borderMesh1.name)
+                    // {
+                    //     intersects[i].object.material.color.set(0xff0000);
+                    // }
+                    // }
+                    // console.log(borderMesh.material);
+                    addSelectedObject(borderMesh);
+                    outlinePass.selectedObjects=borderMesh;
+                    console.log(outlinePass);
+                    // bordermaterial.color = new THREE.Color(0xff0000);
+                    // borderMesh.material= bordermaterial;
+                    
+            }
+        }
+
+            window.onresize=function(){
+            // 重置渲染器输出画布canvas尺寸
+                renderer.setSize(window.innerWidth,window.innerHeight);
+                k = window.innerWidth/window.innerHeight;//窗口宽高比
+                var s = 100;
+                camera.left = -s*k;
+                camera.right = s*k;
+                camera.top = s;
+                camera.bottom = -s;
+                
+                camera.updateProjectionMatrix ();
+            };
+
+            window.addEventListener( 'click', click, false );//鼠标点击事件
+            // window.addEventListener( 'click', click, false );
+            // // window.addEventListener( 'click', outlineObj( selectedObjects ) );
+            // window.addEventListener('touchmove',  { passive: false })
+            
+            render();
+            function render(){
+                window.requestAnimationFrame(render);
+                var delta = clock.getDelta();//使操作更加平滑
+                orbitcontrol.update(delta);
+                stats.update();
+                // scene.rotateY(0.01)
+                // firstControls.update(delta);
+                // trackballControls.update(delta);
+                // cube.rotation.x+=0.02;
+                // cone.rotation.x+=0.05;
+                composer.render(scene, camera);
+                renderer.render(scene,camera);
+            }
+            }
+
+    </script>
+    <div id="box"></div>
+</body>
+</html>
