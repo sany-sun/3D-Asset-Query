@@ -23,12 +23,44 @@
     <script src="./js/three.js-master/examples/js/postprocessing/RenderPass.js"></script>
     <script src="./js/three.js-master/examples/js/postprocessing/UnrealBloomPass.js"></script>
     <script src="./js/three.js-master/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="./js/three.js-master/examples/js/renderers/CSS2DRenderer.js"></script>
+    <script id="vertexShader" type="x-shader/x-vertex">
+    varying vec2 vUv;
+    void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+    }
+    </script>
+    <script type="x-shader/x-fragment" id="fragmentShader">
+    uniform sampler2D baseTexture;
+    uniform sampler2D bloomTexture;
+    varying vec2 vUv;
+    vec4 getTexture( sampler2D texelToLinearTexture ) {
+    return mapTexelToLinear( texture2D( texelToLinearTexture , vUv ) );
+    }
+    void main() {
+      gl_FragColor = ( getTexture( baseTexture ) + vec4( 1.0 ) * getTexture( bloomTexture ) );
+    }
+    </script>
+
+
     <title>Document</title>
     <style>
-        div{
-            width:10px;
-            height:10px;
+        #box{
+            width:100%;
+            height:100%;
         }
+        #infolabel{
+            content: attr(data-title);
+            position: absolute;
+            left: -120px;
+            top:30px;
+            border: 1px solid #5598a1;
+            background: #5598a1;
+            border-radius: 5px;
+            padding: 10px 15px;
+        }
+
     </style>
 </head>
 <body>
@@ -89,10 +121,11 @@
             }
             basistool();
 
+            //模型加载
             function loder(){
             const gltfLoader = new THREE.GLTFLoader();
             gltfLoader.load(
-            "./assert/mesh/机场线/t2/t2.gltf",
+            "./assert/mesh/机场线/t2/t2_2.gltf",
             function (gltf) {
                 console.log(gltf)
                 gltf.scene.receiveShadow = true;
@@ -132,7 +165,7 @@
             }
             gui();
 
-
+            //灯光效果
             function light(){
             var light = new THREE.DirectionalLight( 0xffffff ); // soft white light
             light.castShadow = true;
@@ -146,6 +179,7 @@
             }
             light();
 
+            //天空盒
             function skybox(){
             var path = '/assert/skybox/bak26/';
             var format = '.jpg';
@@ -175,9 +209,28 @@
             }
             skybox()
 
-            
-            
+            const info = document.createElement('div');
+            const infoLabel = new THREE.CSS2DObject(info);
+            scene.add(infoLabel);
+            var labelRenderer = new THREE.CSS2DRenderer();
+            var labelorbitcontrol = new THREE.OrbitControls(camera, labelRenderer.domElement);
+            function infobox(x,y,z,name){
+                infoLabel.position.set(x,y,z);
+                document.body.appendChild( labelRenderer.domElement );
+                labelRenderer.domElement.style.position = 'absolute';
+                labelRenderer.domElement.style.top = '0px';
+                labelRenderer.setSize( window.innerWidth, window.innerHeight );
+                info.className = 'label';
+                info.id = 'infolabel';
+                info.textContent = name;
+                info.style.marginTop = '-1em';
+            }
 
+
+            //点击事件
+            var borderMesh=[];
+            var bordermaterial;
+            var bordermaterial1;
             function click(event){
             var raycaster = new THREE.Raycaster();
             var mouse = new THREE.Vector2();
@@ -207,38 +260,55 @@
             objs = objs.sort(function (a, b) {
                 return a.userData.distance - b.userData.distance;
             });
-            const outlinePass = new THREE.OutlinePass(new THREE.Vector2(window.innerWidth,window.innerHeight), scene, camera);
-            outlinePass.renderToScreen = true;
-            outlinePass.edgeStrength = 3 //粗
-            outlinePass.edgeGlow = 2 //发光
-            outlinePass.edgeThickness = 2 //光晕粗
-            outlinePass.pulsePeriod = 1 //闪烁
-            outlinePass.usePatternTexture = false //是否使用贴图
-            outlinePass.visibleEdgeColor.set('yellow'); // 设置显示的颜色
-            outlinePass.hiddenEdgeColor.set(0xff00ff);
-            composer.addPass(outlinePass);
-            
+
             if(intersects.length>0){
-                    var borderMesh = intersects[0].object;
-                    var bordermaterial = borderMesh.material.clone();
-                    // borderMesh1.material.name='hh';
-                    // console.log(borderMesh1.uuid);
-                    // for(i=0;i<intersects.length;i++){
-                        // console.log(intersects[0].object.name)
-                        // console.log(borderMesh1.name)
-                    //     if(intersects[i].object.name==borderMesh1.name)
-                    // {
-                    //     intersects[i].object.material.color.set(0xff0000);
-                    // }
-                    // }
-                    // console.log(borderMesh.material);
-                    bloomPass.selectedObjects=borderMesh;
-                    console.log(bloomPass);
-                    // bordermaterial.color = new THREE.Color(0xff0000);
-                    borderMesh.material= bordermaterial;
-                    
+                if(borderMesh.length==0){
+                    borderMesh = intersects[0].object;
+                    a = borderMesh;
+                    bordermaterial = borderMesh.material.clone();
+                    bordermaterial1 = borderMesh.material.clone();
+                    bordermaterial = customMaterial;
+                    borderMesh.material=bordermaterial;  
+                    console.log(borderMesh);
+                    infobox(borderMesh.position.x,borderMesh.position.y+2,borderMesh.position.z,borderMesh.name)
+                    console.log(document.body);
+                    console.log()
+                }
+                else{
+                    console.log(borderMesh);
+                    borderMesh.material = bordermaterial1;
+                    borderMesh = intersects[0].object;
+                    a = borderMesh;
+                    bordermaterial = borderMesh.material.clone();
+                    bordermaterial1 = borderMesh.material.clone();
+                    bordermaterial = customMaterial;
+                    borderMesh.material=bordermaterial; 
+                    infobox(borderMesh.position.x,borderMesh.position.y+2,borderMesh.position.z,borderMesh.name)
+                }
+            }
+            else{
+                borderMesh.material = bordermaterial1;
+                var rdiv = document.getElementsByClassName('label')[0];
+                infobox(9999,9999,999,'')
+                
             }
         }
+
+        //点击后材质(还需改进)
+        var customMaterial = new THREE.ShaderMaterial({
+        uniforms: 
+        { 
+        "s":   { type: "f", value: -1.0},
+        "b":   { type: "f", value: 1.0},
+        "p":   { type: "f", value: 2.0 },
+        glowColor: { type: "c", value: new THREE.Color(0x0033ff) }
+        },
+        // vertexShader:   document.getElementById( 'vertexShader'   ).textContent,
+        // fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
+        side: THREE.FrontSide,
+        blending: THREE.AdditiveBlending,
+        transparent: true
+    });
 
             window.onresize=function(){
             // 重置渲染器输出画布canvas尺寸
@@ -250,7 +320,6 @@
                 camera.right = s*k;
                 camera.top = s;
                 camera.bottom = -s;
-                
                 camera.updateProjectionMatrix ();
             };
 
@@ -258,16 +327,15 @@
             
             render();
             function render(){
-                
                 var delta = clock.getDelta();//使操作更加平滑
                 orbitcontrol.update(delta);
                 stats.update();
                 composer.render();
                 window.requestAnimationFrame(render);
                 renderer.render(scene,camera);
+                labelRenderer.render( scene, camera );
             }
             }
-
     </script>
     <div id="box"></div>
 </body>
