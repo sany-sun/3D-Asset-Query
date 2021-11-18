@@ -210,15 +210,16 @@
             skybox()
 
             const info = document.createElement('div');
+            
             const infoLabel = new THREE.CSS2DObject(info);
             scene.add(infoLabel);
             var labelRenderer = new THREE.CSS2DRenderer();
             var labelorbitcontrol = new THREE.OrbitControls(camera, labelRenderer.domElement);
-            function infobox(x,y,z,name){
+            function infobox(x,y,z,name,show){
                 infoLabel.position.set(x,y,z);
                 document.body.appendChild( labelRenderer.domElement );
                 labelRenderer.domElement.style.position = 'absolute';
-                labelRenderer.domElement.style.top = '0px';
+                labelRenderer.domElement.style.top = show;
                 labelRenderer.setSize( window.innerWidth, window.innerHeight );
                 info.className = 'label';
                 info.id = 'infolabel';
@@ -270,7 +271,7 @@
                     bordermaterial = customMaterial;
                     borderMesh.material=bordermaterial;  
                     console.log(borderMesh);
-                    infobox(borderMesh.position.x,borderMesh.position.y+2,borderMesh.position.z,borderMesh.name)
+                    infobox(borderMesh.position.x,borderMesh.position.y+2,borderMesh.position.z,borderMesh.name,'0px')
                     console.log(document.body);
                     console.log()
                 }
@@ -283,13 +284,13 @@
                     bordermaterial1 = borderMesh.material.clone();
                     bordermaterial = customMaterial;
                     borderMesh.material=bordermaterial; 
-                    infobox(borderMesh.position.x,borderMesh.position.y+2,borderMesh.position.z,borderMesh.name)
+                    infobox(borderMesh.position.x,borderMesh.position.y+2,borderMesh.position.z,borderMesh.name,'0px')
                 }
             }
             else{
                 borderMesh.material = bordermaterial1;
                 var rdiv = document.getElementsByClassName('label')[0];
-                infobox(9999,9999,999,'')
+                infobox(9999,9999,999,'','')
                 
             }
         }
