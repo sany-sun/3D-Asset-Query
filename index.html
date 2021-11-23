@@ -46,6 +46,7 @@
 
     <title>三维资产查询</title>
     <style>
+        
         #box{
             width:100%;
             height:100%;
@@ -53,17 +54,50 @@
         #infolabel{
             content: attr(data-title);
             position: absolute;
-            left: -120px;
+            left: 120px;
             top:30px;
             border: 1px solid #5598a1;
             background: #5598a1;
             border-radius: 5px;
             padding: 10px 15px;
+            float: left;
         }
-
+        #rotating{
+            position: absolute;
+            top: 80px;
+            left: 9px;
+            width: 70px;
+            height: 30px;
+        }
+        #location{
+            position: absolute;
+            top: 120px;
+            left: 9px;
+            width: 70px;
+            height: 30px;
+            z-index: 999px;
+        }
+        #three{
+            position: absolute;
+            top: 160px;
+            left: 9px;
+            width: 70px;
+            height: 30px;
+        }
+        #four{
+            position: absolute;
+            top: 200px;
+            left: 9px;
+            width: 70px;
+            height: 30px;
+        }
     </style>
 </head>
 <body>
+    <button id="rotating">旋转展示</button>
+    <button id="location">初始位置</button>
+    <button id="three"></button>
+    <button id="four"></button>
     <script>
         init();
         function init(){
@@ -73,7 +107,6 @@
             var composer;
             const box = document.querySelector("#box");
             var stats = new Stats();
-
             var camera = new THREE.PerspectiveCamera(
                 45,window.innerWidth/window.innerHeight,0.1,1000
             );
@@ -92,53 +125,33 @@
             composer.addPass(renderPass);
             composer.addPass( bloomPass );
 
-            
-            
             var orbitcontrol = new THREE.OrbitControls(camera, renderer.domElement);
             var raycaster = new THREE.Raycaster();
             var mouse = new THREE.Vector2();
-
             composer.addPass(renderPass);
             function basistool(){
             var clearColor = new THREE.Color(0xEEEEEE);
             renderer.setClearColor(clearColor);
             renderer.setSize(window.innerWidth,window.innerHeight);
-            var plane_bottom =new THREE.PlaneGeometry(60,40);//底面材质
-            //材质
-            var planeMaterial = new THREE.MeshLambertMaterial(
-                {side: THREE.DoubleSide,
-                color:0xEEEEEE});
-            var plane1 = new THREE.Mesh(plane_bottom,planeMaterial);
-            plane1.rotation.x = -.5*Math.PI;
-            plane1.position.x=0;
-            plane1.position.y=0;
-            plane1.position.z=0;
+
             camera.position.x = 0;
-            camera.position.y =100;
-            camera.position.z=0;
+            camera.position.y =80;
+            camera.position.z=-20;
             camera.lookAt(scene.position);//相机坐标和照相位置
             document.body.appendChild( renderer.domElement );
             }
             basistool();
 
             //模型加载
+            
             function loder(){
             const gltfLoader = new THREE.GLTFLoader();
             gltfLoader.load(
             "./assert/mesh/机场线/t2/t2_2.gltf",
             function (gltf) {
-                console.log(gltf)
                 gltf.scene.receiveShadow = true;
                 gltf.scene.castShadow = true;
-                console.log(gltf);
-                gltf.scene.scale.set(1,1,1)
-                const levelMesh = gltf.scene.getObjectByName("c");
-                const levelMat = new THREE.MeshStandardMaterial({
-                // color: Color.GROUND,
-                // flatShading: true,
-                // roughness: 1,
-                // metalness: 0,
-                });
+                gltf.scene.scale.set(1,1,1);
                 gltf.scene.receiveShadow = true;
                 gltf.scene.castShadow = true;
                 gltf.scene.traverse(function (node) {
@@ -152,12 +165,10 @@
                 });
                 scene.add(gltf.scene);
             },
-            null
             );
             };
-            loder();
             
-
+            loder();
             function gui(){
             stats.domElement.style.position = 'absolute';
             stats.domElement.style.top = '0px'; //显示在屏幕左上角的地方。
@@ -190,27 +201,26 @@
                         ]
             var materials = [];
             for (var i = 0; i < urls.length; ++i) {
-            var loader = new this.THREE.TextureLoader();
+            var loader = new THREE.TextureLoader();
             // loader.setCrossOrigin( this.crossOrigin );
             var texture = loader.load(urls[i], function () {}, undefined, function () {})
-            materials.push(new this.THREE.MeshBasicMaterial({
+            materials.push(new THREE.MeshBasicMaterial({
                 map: texture,
-                side: this.THREE.BackSide
+                side: THREE.BackSide
                 // transparent: true,
                 // needsUpdate:true
-            })
-            )
-            };
-            var cube = new this.THREE.Mesh(new this.THREE.CubeGeometry(900, 900, 900), materials);
+            }))};
+
+
+            var cube = new THREE.Mesh(new this.THREE.CubeGeometry(900, 900, 900), materials);
             cube.name = 'sky';
             scene.add(cube);
-            var axes = new this.THREE.AxesHelper(100);
+            var axes = new THREE.AxesHelper(100);
             scene.add(axes);
             }
             skybox()
 
             const info = document.createElement('div');
-            
             const infoLabel = new THREE.CSS2DObject(info);
             scene.add(infoLabel);
             var labelRenderer = new THREE.CSS2DRenderer();
@@ -219,13 +229,15 @@
                 infoLabel.position.set(x,y,z);
                 document.body.appendChild( labelRenderer.domElement );
                 labelRenderer.domElement.style.position = 'absolute';
-                labelRenderer.domElement.style.top = show;
+                labelRenderer.domElement.style.top ='0px';
                 labelRenderer.setSize( window.innerWidth, window.innerHeight );
                 info.className = 'label';
                 info.id = 'infolabel';
                 info.textContent = name;
                 info.style.marginTop = '-1em';
+                info.style.visibility=show;
             }
+
 
 
             //点击事件
@@ -265,32 +277,30 @@
             if(intersects.length>0){
                 if(borderMesh.length==0){
                     borderMesh = intersects[0].object;
-                    a = borderMesh;
                     bordermaterial = borderMesh.material.clone();
                     bordermaterial1 = borderMesh.material.clone();
                     bordermaterial = customMaterial;
                     borderMesh.material=bordermaterial;  
-                    console.log(borderMesh);
-                    infobox(borderMesh.position.x,borderMesh.position.y+2,borderMesh.position.z,borderMesh.name,'0px')
+                    infobox(borderMesh.position.x,borderMesh.position.y+2,borderMesh.position.z,borderMesh.name,"visible")
                     console.log(document.body);
-                    console.log()
                 }
                 else{
-                    console.log(borderMesh);
                     borderMesh.material = bordermaterial1;
                     borderMesh = intersects[0].object;
-                    a = borderMesh;
                     bordermaterial = borderMesh.material.clone();
                     bordermaterial1 = borderMesh.material.clone();
                     bordermaterial = customMaterial;
                     borderMesh.material=bordermaterial; 
-                    infobox(borderMesh.position.x,borderMesh.position.y+2,borderMesh.position.z,borderMesh.name,'0px')
+                    infobox(borderMesh.position.x,borderMesh.position.y+2,borderMesh.position.z,borderMesh.name,"visible")
                 }
             }
             else{
                 borderMesh.material = bordermaterial1;
                 var rdiv = document.getElementsByClassName('label')[0];
-                infobox(9999,9999,999,'','')
+                if(document.getElementById("infolabel")){
+                    var CSS2D = document.getElementById("infolabel").parentNode;
+                    CSS2D.parentNode.removeChild(CSS2D);
+                }
                 
             }
         }
@@ -324,8 +334,21 @@
                 camera.updateProjectionMatrix ();
             };
 
+            //button点击事件
+            var backposition = document.getElementById("location");
+                backposition.onclick=function(){
+                    camera.position.x = 0;
+                    camera.position.y =100;
+                    camera.position.z=0;
+                }
+            var rotating = document.getElementById("rotating");
+            var a=false;
+            rotating.onclick=function(){
+                return(a?a=false:a=true)
+            }
+
+            var theta=0;
             window.addEventListener( 'click', click, false );//鼠标点击事件
-            
             render();
             function render(){
                 var delta = clock.getDelta();//使操作更加平滑
@@ -335,8 +358,14 @@
                 window.requestAnimationFrame(render);
                 renderer.render(scene,camera);
                 labelRenderer.render( scene, camera );
+                if(a){
+                    theta+=0.005;
+                camera.rotation.y=theta;
+                camera.position.set(5*Math.sin(theta),80,5*Math.cos(theta));}
+                
             }
             }
+            
     </script>
     <div id="box"></div>
 </body>
