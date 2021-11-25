@@ -26,20 +26,38 @@
     <script src="./js/three.js-master/examples/js/renderers/CSS2DRenderer.js"></script>
     <script id="vertexShader" type="x-shader/x-vertex">
     varying vec2 vUv;
-    void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-    }
+    uniform float amplitude;
+
+			attribute vec3 displacement;
+			attribute vec3 customColor;
+
+			varying vec3 vColor;
+
+			void main() {
+
+				vec3 newPosition = position + amplitude * displacement;
+
+				vColor = customColor;
+
+				gl_Position = projectionMatrix * modelViewMatrix * vec4( newPosition, 1.0 );
+
+			}
     </script>
     <script type="x-shader/x-fragment" id="fragmentShader">
-    uniform sampler2D baseTexture;
-    uniform sampler2D bloomTexture;
-    varying vec2 vUv;
-    vec4 getTexture( sampler2D texelToLinearTexture ) {
-    return mapTexelToLinear( texture2D( texelToLinearTexture , vUv ) );
-    }
-    void main() {
-      gl_FragColor = ( getTexture( baseTexture ) + vec4( 1.0 ) * getTexture( bloomTexture ) );
+        uniform vec3   glowColor;
+        uniform float coeficient;
+        uniform float power;
+    
+        varying vec3  vVertexNormal;
+        varying vec3  vVertexWorldPosition;
+        varying vec4  vFragColor;
+        void main(){
+        vec3 worldVertexToCamera= cameraPosition - vVertexWorldPosition;
+        vec3 viewCameraToVertex    = (viewMatrix * vec4(worldVertexToCamera, 0.0)).xyz;
+        viewCameraToVertex = normalize(viewCameraToVertex);
+        float intensity       = coeficient + dot(vVertexNormal, viewCameraToVertex);
+        if(intensity > 0.55){ intensity = 0.0;}
+        gl_FragColor     = vec4(glowColor, intensity);
     }
     </script>
 
@@ -94,8 +112,8 @@
         }
         table.imagetable {
             position: absolute;
-            top: 20px;
-            right: 6px;
+            top: 10px;
+            left: 100px;
             font-family: verdana,arial,sans-serif;
             font-size:11px;
             color:#333333;
@@ -122,8 +140,6 @@
 <body>
     <button id="rotating">旋转展示</button>
     <button id="location">初始位置</button>
-    <button id="three"></button>
-    <button id="four"></button>
     <script>
         init();
         function init(){
@@ -194,27 +210,33 @@
             );
             };
             
+            const light = new THREE.DirectionalLight( 0xffffff ); // soft white light
+            light.position.set(10, 10, 0);
+            var gui = new dat.GUI();
+            gui.add(light.position, "x", -100, 100);
+            gui.add(light.position, "y", -100, 100);
+            gui.add(light.position, "z", -100, 100);
             loder();
-            function gui(){
+            function guizl(){
             stats.domElement.style.position = 'absolute';
             stats.domElement.style.top = '0px'; //显示在屏幕左上角的地方。
             document.body.appendChild( stats.domElement );//添加到container之后
             }
-            gui();
+            guizl();
 
+            
             //灯光效果
-            function light(){
-            var light = new THREE.DirectionalLight( 0xffffff ); // soft white light
+            function lightj(){
             light.castShadow = true;
-            light.shadow.camera.near = 0.1; //产生阴影的最近距离
-            light.shadow.camera.far = 10; //产生阴影的最远距离
-            light.shadow.camera.left = -2; //产生阴影距离位置的最左边位置
-            light.shadow.camera.right = 2; //最右边
-            light.shadow.camera.top = 2; //最上边
-            light.shadow.camera.bottom = -2; //最下面
-            scene.add( light );
+            light.shadow.camera.top = 2;
+            light.shadow.camera.bottom = -2;
+            light.shadow.camera.left = -2;
+            light.shadow.camera.right = 2;
+            light.shadow.camera.near = 10;
+            light.shadow.camera.far = 10;
+            scene.add(light);
             }
-            light();
+            lightj();
 
             //天空盒
             function skybox(){
@@ -274,7 +296,6 @@
                 document.getElementById("z").innerHTML=z.toFixed(2);
                 console.log(typeof(x))
             }
-
 
 
             //点击事件
